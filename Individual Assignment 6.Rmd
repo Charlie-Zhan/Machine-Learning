@@ -1,0 +1,76 @@
+---
+title: "Individual Assignment 6"
+author: "Charlie Ling"
+date: "10/6/2021"
+output: pdf_document
+---
+For Context, Refer to Problem 8 (parts a, b, c, & d). 
+```{r}
+set.seed(1)
+X=rnorm(100)
+e=rnorm(100)
+Y=0.3+0.5*X+0.2*X^2+0.1*X^3+e
+df=data.frame(Y,X)
+train = sample(1:100, 100/2) ##default replace = FALSE
+test=(-train)
+y.test = Y[test]
+```
+
+
+(e) Now fit a lasso model to the simulated data, again using X, X2, . . . , X10 as predictors. Use cross-validation to select the optimal value of gamma. Create plots of the cross-validation error as a function of gamma. Report the resulting coefficient estimates, and discuss the results obtained.
+```{r}
+grid = 10^seq(10,-2,length=100)
+x = model.matrix(Y~poly(X,10),df)
+y=Y
+library(glmnet)
+lasso.mod = glmnet(x,y,alpha=1,lambda=grid,thresh = 1e-12)
+set.seed(1)
+cv.out = cv.glmnet(x[train,],y[train], alpha=1) ##default is 10-fold cross-validation.
+plot(cv.out)
+bestlam = cv.out$lambda.min
+lasso.pred=predict(lasso.mod,s=bestlam,x=x[train,],y=y[train],newx=x[test,],exact = T)
+mean((lasso.pred-y.test)^2)
+out=glmnet(x,y,alpha=1,lambda=grid)
+lasso.coef = predict(out,type="coefficients",s=bestlam)[-1,]
+lasso.coef[lasso.coef!=0]
+length(lasso.coef[lasso.coef!=0])
+length(lasso.coef[lasso.coef!=0])
+#LASSO reduce the original 10 predictors into 6 predictors: X1,X2,X3,X4,X5,X10
+```
+
+
+(f) Now generate a response vector Y according to the model
+
+Y=B0+B7X7+e,
+
+and perform best subset selection and the lasso. Discuss the results obtained.
+```{r}
+Y=0.1+0.7*X^7+e
+df=data.frame(Y,X)
+y.test = Y[test]
+
+library(leaps)
+regfit.full = regsubsets(Y~poly(X,10),data=df)
+reg.summary = summary(regfit.full)
+plot(reg.summary$adjr2,xlab="Number of Predictors", ylab = "Adjusted RSq", type = "l")
+which.max(reg.summary$adjr2)
+coef(regfit.full,7)
+points(7,reg.summary$adjr2[7],col="red",cex=2,pch=20)
+#Model 7 is the best model obtained according to adjr2, which has 7 predictors: X1,X2,X3,X4,X5,X6,X7
+
+x = model.matrix(Y~poly(X,10),df)
+y=Y
+lasso.mod = glmnet(x,y,alpha=1,lambda=grid,thresh = 1e-12)
+set.seed(1)
+cv.out = cv.glmnet(x[train,],y[train], alpha=1) ##default is 10-fold cross-validation.
+plot(cv.out)
+bestlam = cv.out$lambda.min
+lasso.pred=predict(lasso.mod,s=bestlam,x=x[train,],y=y[train],newx=x[test,],exact = T)
+mean((lasso.pred-y.test)^2)
+out=glmnet(x,y,alpha=1,lambda=grid)
+lasso.coef = predict(out,type="coefficients",s=bestlam)[-1,]
+lasso.coef[lasso.coef!=0]
+length(lasso.coef[lasso.coef!=0])
+#LASSO reduce the original 10 predictors into 8 predictors: X1,X2,X3,X4,X5,X6,X7,X10
+```
+

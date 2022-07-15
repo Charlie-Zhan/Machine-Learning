@@ -1,0 +1,122 @@
+---
+title: "Individual Assignment 9"
+author: "Charlie Ling"
+date: "2021/11/13"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Problem #8. This problem involves the OJ data set which is part of the ISLR package. 
+
+(a) Create a training set containing a random sample of 800 observations, and a test set containing the remaining observations.
+```{r}
+library(ISLR)
+set.seed(1)
+train=sample(nrow(OJ),800)
+test=-train
+```
+
+
+(b) Fit a support vector classifier to the training data using cost=0.01, with Purchase as the response and the other variables as predictors. Use the summary() function to produce summary statistics, and describe the results obtained.
+```{r}
+library(e1071)
+
+svcfit=svm(Purchase~.,data = OJ[train,], kernel = "linear", cost=0.01)
+
+summary(svcfit)
+
+#There are 435 support vectors, 219 are in CH side and 216 are in MM side 
+```
+
+(c) What are the training and test error rates?
+```{r}
+mean(predict(svcfit,OJ[train,])!=OJ[train,]$Purchase)
+  
+mean(predict(svcfit,OJ[-train,])!=OJ[-train,]$Purchase)  
+
+# training error rate is 0.175
+# test error rate is 0.1777778
+```
+
+(d) Use the tune() function to select an optimal cost. Consider values in the range 0.01 to 10.
+```{r}
+set.seed(1)
+
+tune.out = tune(svm, Purchase~.,data = OJ[train,], kernel = "linear", ranges=list(cost=c(0.1,1,10)))
+
+summary(tune.out)
+
+bestmod = tune.out$best.model
+
+summary(bestmod)
+```
+
+
+(e) Compute the training and test error rates using this new value for cost.
+```{r}
+mean(predict(bestmod,OJ[train,])!=OJ[train,]$Purchase)
+  
+mean(predict(bestmod,OJ[-train,])!=OJ[-train,]$Purchase)  
+
+# training error rate is 0.165
+# test error rate is 0.162963
+```
+
+
+(f) Repeat parts (b) through (e) using a support vector machine with a radial kernel. Use the default value for gamma.
+```{r}
+svmfit=svm(Purchase~.,data = OJ[train,], kernel = "radial", cost=0.01)
+summary(svmfit)
+#There are 634 support vectors, 319 are in CH side and 315 are in MM side 
+mean(predict(svmfit,OJ[train,])!=OJ[train,]$Purchase)
+mean(predict(svmfit,OJ[-train,])!=OJ[-train,]$Purchase)  
+# training error rate is 0.39375
+# test error rate is 0.3777778
+```
+```{r}
+set.seed(1)
+tune.out = tune(svm, Purchase~.,data = OJ[train,], kernel = "radial", ranges=list(cost=c(0.1,1,10)))
+summary(tune.out)
+bestmod = tune.out$best.model
+summary(bestmod)
+mean(predict(bestmod,OJ[train,])!=OJ[train,]$Purchase)
+mean(predict(bestmod,OJ[-train,])!=OJ[-train,]$Purchase)  
+# training error rate is 0.15125
+# test error rate is 0.1851852
+```
+
+
+(g) Repeat parts (b) through (e) using a support vector machine with a polynomial kernel. Set degree=2.
+```{r}
+svmfit=svm(Purchase~.,data = OJ[train,], kernel = "polynomial", cost=0.01, degree=2)
+summary(svmfit)
+#There are 636 support vectors, 321 are in CH side and 315 are in MM side 
+mean(predict(svmfit,OJ[train,])!=OJ[train,]$Purchase)
+mean(predict(svmfit,OJ[-train,])!=OJ[-train,]$Purchase)  
+# training error rate is 0.3725
+# test error rate is 0.3666667
+```
+
+```{r}
+set.seed(1)
+tune.out = tune(svm, Purchase~.,data = OJ[train,], kernel = "polynomial", ranges=list(cost=c(0.1,1,10), degree = 2))
+summary(tune.out)
+bestmod = tune.out$best.model
+summary(bestmod)
+mean(predict(bestmod,OJ[train,])!=OJ[train,]$Purchase)
+mean(predict(bestmod,OJ[-train,])!=OJ[-train,]$Purchase)  
+# training error rate is 0.15
+# test error rate is 0.1888889
+```
+
+
+(h) Overall, which approach seems to give the best results on this data?
+```{r}
+# support vector classifier (linear kernel) with cost=0.1 seems to give the best results
+```
+

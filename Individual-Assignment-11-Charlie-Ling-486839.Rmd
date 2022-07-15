@@ -1,0 +1,42 @@
+---
+title: "Individual Assignment 11"
+author: "Charlie Ling"
+date: "2021/12/2"
+output:
+  word_document: default
+  html_document: default
+---
+
+Exercise 10.7: Problem 9
+ISLR p.417
+
+9. Consider the USArrests data. We will now perform hierarchical clustering on the states.
+
+(a) Using hierarchical clustering with complete linkage and Euclidean distance, cluster the states.
+```{r}
+library(ISLR)
+df=na.omit(USArrests)
+hc.complete = hclust(dist(df), method = "complete")
+plot(hc.complete)
+```
+
+(b) Cut the dendrogram at a height that results in three distinct clusters. Which states belong to which clusters?
+```{r}
+cutree(hc.complete,3)
+```
+
+(c) Hierarchically cluster the states using complete linkage and Euclidean distance, after scaling the variables to have standard deviation one.
+```{r}
+library(caret)
+norm.values =preProcess(df,method = c("center", "scale"))
+df.norm= predict(norm.values, df)
+hc.complete = hclust(dist(df.norm), method = "complete")
+plot(hc.complete)
+cutree(hc.complete,3)
+```
+
+(d) What effect does scaling the variables have on the hierarchical clustering obtained? In your opinion, should the variables be scaled before the inter-observation dissimilarities are computed? Provide a justification for your answer.
+```{r}
+#Scaling makes the cluster more evenly distributed and into more groups. As for this case, I do not think the variables should be scaled, because the scaled data are clustered into more than 3 groups. And the absolute value of crimes instead of scaled value is more useful to define the crime situation of a state.
+```
+

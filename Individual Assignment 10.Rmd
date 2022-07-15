@@ -1,0 +1,65 @@
+---
+title: "Individual Assignment 10"
+author: "Charlie Ling"
+date: "2021/11/18"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Direct Mailing to Airline Customers. East-West Airlines has entered into a partnership with the wireless phone company Telcon to sell the latter’s service via direct mail. The file EastWestAirlinesNN.csv  Download EastWestAirlinesNN.csv contains a subset of a data sample of who has already received a test offer. About 13% accepted.
+
+You are asked to develop a model to classify East-West customers as to whether they purchase a wireless phone service contract (outcome variable Phone_Sale). This model will be used to classify additional customers.
+```{r}
+setwd("C:/LearnAndWorkdDocuments/500s")
+df=read.csv("EastWestAirlinesNN.csv")
+df=na.omit(df)
+```
+```{r}
+var=names(df)[2:15]
+f = as.formula(paste("Phone_sale~",paste(var,collapse = "+")))
+```
+
+
+1.Run a neural net model on these data, using a single hidden layer with 5 nodes. Remember to first convert categorical variables into dummies and scale numerical predictor variables to a 0-1 (use function preprocess() with method=“range” - see Chapter 7). Generate a deciles-wise lift chart for the training and validation sets. Interpret the meaning (in business terms) of the leftmost bar of the validation decile- wise lift chart.
+```{r}
+set.seed(1)
+train = sample(nrow(df), nrow(df)*0.7)
+test=-train
+library(neuralnet)
+nn <- neuralnet(f, data = df[train,], linear.output = F, hidden = 5)
+nn$weights
+plot(nn, rep="best")
+nn.pred.train = predict(nn, df[train,], type = "class")
+nn.pred.test = predict(nn, df[test,], type = "class")
+
+library(gains)
+
+gain.train = gains(df.train$Phone_sale, nn.pred.train)
+barplot(gain.train$mean.resp/mean(df.train$Phone_sale), names.arg = gain.train$depth, xlab = "Pecentile", ylab = "Mean Response", main = "Decile-wise lift chart")
+
+gain.test = gains(df.test$Phone_sale, nn.pred.test)
+barplot(gain.test$mean.resp/mean(df.test$Phone_sale), names.arg = gain.test$depth, xlab = "Pecentile", ylab = "Mean Response", main = "Decile-wise lift chart")
+```
+
+2.Comment on the difference between the training and validation lift charts.
+```{r}
+# The result in training set is better than validation set, so there is over-fitting problem
+```
+
+3.Run a second neural net model on the data, this time setting the number of hidden nodes to 1. Comment now on the difference between this model and the model you ran earlier, and how overfitting might have affected results.
+```{r}
+nn <- neuralnet(f, data = df[train,], linear.output = F, hidden = 1)
+nn$weights
+plot(nn, rep="best")
+```
+
+4.What sort of information, if any, is provided about the effects of the various variables?
+```{r}
+# By observing the weights, we can see balance and flight miles 12 mo are most effective variables 
+```
+

@@ -1,0 +1,58 @@
+---
+title: "Individual Assignment 7"
+author: "Charlie Ling"
+date: "10/29/2021"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+Problem #8: In the lab, a classification tree was applied to the Carseats data set after converting Sales into a qualitative response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable.
+
+(a) Split the data set into a training set and a test set.
+```{r}
+library(ISLR)
+Carseats=na.omit(Carseats)
+fix(Carseats)
+set.seed(3)
+train=sample(nrow(Carseats),nrow(Carseats)/2)
+test=-train
+```
+
+
+(b) Fit a regression tree to the training set. Plot the tree, and interpret the results. What test MSE do you obtain?
+```{r}
+library(tree)
+tree.Carseats = tree(Sales~.,Carseats,subset=train)
+plot(tree.Carseats)
+text(tree.Carseats,pretty=0)
+summary(tree.Carseats)
+tree.Carseats
+```
+```{r}
+tree.pred=predict(tree.Carseats,Carseats[test,])
+mean((tree.pred-Carseats$Sales[test])^2)
+#test MSE is 4.784151
+```
+
+
+
+(c) Use cross-validation in order to determine the optimal level of tree complexity. Does pruning the tree improve the test MSE?
+```{r}
+set.seed(3)
+cv.Carseats=cv.tree(tree.Carseats)
+names(cv.Carseats)
+cv.Carseats
+plot(cv.Carseats$size,cv.Carseats$dev,type="b")
+# optimal tree size is 10
+```
+```{r}
+prune.Carseats=prune.tree(tree.Carseats,best=10)
+plot(prune.Carseats)
+text(prune.Carseats,pretty=0)
+tree.pred=predict(tree.Carseats,Carseats[test,])
+mean((tree.pred-Carseats$Sales[test])^2)
+#test MSE is 4.784151, which is the same as unpruned trees, so this pruning the tree does not improve the test MSE
+```
+
+

@@ -1,0 +1,159 @@
+---
+title: "Individual Assignment 8"
+author: "Group 3"
+date: "11/3/2021"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+Exercises 8.4
+Problem #8: In the lab, a classification tree was applied to the Carseats data set after converting Sales into a qualitative response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable.
+```{r}
+library(ISLR)
+
+set.seed(2)
+
+train = sample(1:nrow(Carseats),200)
+
+Carseats.test = Carseats[-train,]
+```
+
+(d) Use the bagging approach in order to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables are most important.
+```{r}
+#bagging
+
+library(randomForest)
+
+set.seed(1)
+
+bag.Carseats = randomForest(Sales~., data=Carseats, subset=train, mtry=10, importance=TRUE)
+
+bag.Carseats
+
+yhat.bag = predict(bag.Carseats, newdata = Carseats.test)
+
+
+mean((yhat.bag-Carseats.test$Sales)^2)
+#test MSE is 2.555523
+importance(bag.Carseats)
+#Price, ShelveLoc and CompPrice are most important
+```
+
+(e) Use random forests to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables are most important. Describe the effect of m, the number of variables considered at each split, on the error rate obtained.
+```{r}
+library(randomForest)
+
+set.seed(1)
+
+rf.Carseats = randomForest(Sales~.,data=Carseats, subset=train, mtry=3, importance=TRUE)
+
+rf.Carseats
+
+yhat.rf = predict(rf.Carseats, newdata = Carseats.test)
+
+mean((yhat.rf-Carseats.test$Sales)^2)
+#test MSE is 3.20635
+importance(rf.Carseats)
+#Price, ShelveLoc are most important
+#A larger m will decrease test MSE
+```
+
+Problem #10: We now use boosting to predict Salary in the Hitters data set.
+
+(a) Remove the observations for whom the salary information is unknown, and then log-transform the salaries.
+```{r}
+Hitters=na.omit(Hitters)
+log_salary=log(Hitters$Salary)
+Hitters=data.frame(Hitters,log_salary)
+```
+
+
+(b) Create a training set consisting of the first 200 observations, and a test set consisting of the remaining observations.
+```{r}
+train=c(1:200)
+test=-train
+```
+
+
+(c) Perform boosting on the training set with 1,000 trees for a range of values of the shrinkage parameter λ. Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+```{r}
+library(gbm)
+lambada_grid=c(0.01,0.001,0.0001)
+MSE=rep(0,3)
+for(i in 1:3){
+  boost.Hitters= gbm(log_salary~.-Salary,Hitters[train,],distribution = "gaussian", n.trees=1000,interaction.depth=4,shrinkage = lambada_grid[i] )
+  yhat.boost=predict(boost.Hitters,newdata=Hitters[train,],n.trees=1000,interaction.depth=4,shrinkage = lambada_grid[i] )
+  MSE[i]=mean((yhat.boost - Hitters[train,]$log_salary)^2) }
+             
+
+plot(lambada_grid,MSE)
+
+```
+
+
+(d) Produce a plot with different shrinkage values on the x-axis and the corresponding test set MSE on the y-axis.
+```{r}
+for(i in 1:3){
+  boost.Hitters= gbm(log_salary~.-Salary,Hitters[train,],distribution = "gaussian", n.trees=1000,interaction.depth=4,shrinkage = lambada_grid[i] )
+  yhat.boost=predict(boost.Hitters,newdata=Hitters[test,],n.trees=1000,interaction.depth=4,shrinkage = lambada_grid[i] )
+  MSE[i]=mean((yhat.boost - Hitters[test,]$log_salary)^2) }
+             
+
+plot(lambada_grid,MSE)
+MSE
+```
+
+
+(e) Compare the test MSE of boosting to the test MSE that results from applying two of the regression approaches seen in Chapters 3 and 6.
+```{r}
+library(glmnet)
+x = model.matrix(log_salary~.-Salary,Hitters)[,-2]
+y = Hitters$log_salary
+grid = 10^seq(10,-2,length=100)
+#ridge regression
+ridge.mod = glmnet(x,y,alpha=0,lambda=grid,thresh = 1e-12)
+set.seed(1)
+cv.out = cv.glmnet(x[train,],y[train], alpha=0) ##default is 10-fold cross-validation.
+bestlam = cv.out$lambda.min
+ridge.pred=predict(ridge.mod,s=bestlam,x=x[train,],y=y[train],newx=x[test,],exact = T)
+mean((ridge.pred-y[test])^2)
+
+#LASSO
+lasso.mod = glmnet(x,y,alpha=1,lambda=grid,thresh = 1e-12)
+set.seed(1)
+cv.out = cv.glmnet(x[train,],y[train], alpha=1) ##default is 10-fold cross-validation.
+bestlam = cv.out$lambda.min
+lasso.pred=predict(lasso.mod,s=bestlam,x=x[train,],y=y[train],newx=x[test,],exact = T)
+mean((lasso.pred-y[test])^2)
+
+#linear regression
+
+glm.fit = glm(log_salary~.-Salary,data = Hitters ,subset = train)
+yhat.glm = predict(glm.fit, newdata = Hitters[test,], type = "response")
+mean((yhat.glm - Hitters[test,]$log_salary) ^ 2)
+
+# The test MSE of boosting With shrinkage of 0.01 is smaller than linear regression, ridge regression and LASSO
+```
+
+(f) Which variables appear to be the most important predictors in the boosted model?
+```{r}
+summary(boost.Hitters)
+#CAtBat appears to be the most important predictors in the boosted model
+```
+
+
+(g) Now apply bagging to the training set. What is the test set MSE for this approach?
+```{r}
+set.seed(1)
+bag.Hitters = randomForest(log_salary~.-Salary, data=Hitters, subset=train, mtry=19, importance=TRUE)
+
+bag.Hitters
+
+yhat.bag = predict(bag.Hitters, newdata = Hitters[test,])
+
+
+mean((yhat.bag-Hitters[test,]$log_salary)^2)
+#test MSE is 0.2301184
+```
+

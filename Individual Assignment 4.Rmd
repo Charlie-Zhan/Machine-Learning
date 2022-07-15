@@ -1,0 +1,138 @@
+---
+title: "Individual Assignment 4"
+author: "Charlie Ling"
+date: "9/23/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+4.7 Exercise, Problem 10 (part f) 
+
+10. This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter’s lab, except that it contains 1, 089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+```{r}
+rm(list=ls())#release memory
+library(ISLR)
+Weekly=na.omit(Weekly)
+```
+
+for context: (d) Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+```{r}
+train=(Weekly$Year>=1990)&(Weekly$Year<=2008)
+glm.fit=glm(Direction~Lag2,data=Weekly[train,],family = binomial)
+glm.probs = predict(glm.fit,Weekly[!train,], type = "response")
+glm.pred = rep("Down",length(glm.probs))
+glm.pred[glm.probs>0.5]="Up"
+table(glm.pred,Weekly[!train,]$Direction)
+mean(glm.pred==Weekly[!train,]$Direction)
+```
+
+
+(f) Repeat (d) using QDA.
+```{r}
+library(MASS)
+qda.fit = qda(Direction~Lag2,data=Weekly[train,])
+qda.class = predict(qda.fit,Weekly[!train,])$class
+table(qda.class,Weekly[!train,]$Direction)
+mean(qda.class==Weekly[!train,]$Direction)
+```
+
+ 
+
+5.4 Exercise, Problem 8  
+
+8. We will now perform cross-validation on a simulated data set.
+
+(a) Generate a simulated data set as follows:
+```{r}
+set.seed (1)
+x=rnorm (100)
+y=x-2*x^2+ rnorm (100)
+```
+
+
+In this data set, what is n and what is p? Write out the model used to generate the data in equation form.
+```{r}
+# n=100, p=1
+# y = x - 2*x^2 + e
+```
+(b) Create a scatterplot of X against Y. Comment on what you find.
+```{r}
+plot(x,y)
+```
+
+(c) Set a random seed, and then compute the LOOCV errors that result from fitting the following four models using least squares:
+
+i. Y = B0 + B1X + e
+ii. Y = B0 + B1X + B2X^2 + e
+iii. Y = B0 + B1X + B2X^2 + B3X^3 + e
+iv. Y = B0 + B1X + B2X^2 + B3X^3 + B4X^4 + e.
+
+Note you may find it helpful to use the data.frame() function to create a single data set containing both X and Y.
+```{r}
+df=data.frame(y,x)
+set.seed (2)
+library(boot)
+glm.fit1=glm(y~x,data=df)
+cv.err1 = cv.glm(df,glm.fit1)
+cv.err1$delta
+glm.fit2=glm(y~poly(x,2),data=df)
+cv.err2 = cv.glm(df,glm.fit2)
+cv.err2$delta
+glm.fit3=glm(y~poly(x,3),data=df)
+cv.err3 = cv.glm(df,glm.fit3)
+cv.err3$delta
+glm.fit4=glm(y~poly(x,4),data=df)
+cv.err4 = cv.glm(df,glm.fit4)
+cv.err4$delta
+```
+
+
+(d) Repeat (c) using another random seed, and report your results. Are your results the same as what you got in (c)? Why?
+```{r}
+set.seed (3)
+glm.fit1=glm(y~x,data=df)
+cv.err1 = cv.glm(df,glm.fit1)
+cv.err1$delta
+glm.fit2=glm(y~poly(x,2),data=df)
+cv.err2 = cv.glm(df,glm.fit2)
+cv.err2$delta
+glm.fit3=glm(y~poly(x,3),data=df)
+cv.err3 = cv.glm(df,glm.fit3)
+cv.err3$delta
+glm.fit4=glm(y~poly(x,4),data=df)
+cv.err4 = cv.glm(df,glm.fit4)
+cv.err4$delta
+# The same. LOOCV will always yield the same results because we split ‘n’ times leaving-out a different observation every time.
+```
+
+(e) Which of the models in (c) had the smallest LOOCV error? Is this what you expected? Explain your answer.
+```{r}
+# Model 2 has the smallest LOOCV error. It is what I expect because this model is similar to the model used to generate the data 
+```
+
+(f) Comment on the statistical significance of the coefficient estimates that results from fitting each of the models in (c) using least squares. Do these results agree with the conclusions drawn based on the cross-validation results?
+```{r}
+set.seed (1)
+summary(glm.fit1)
+summary(glm.fit2)
+summary(glm.fit3)
+summary(glm.fit4)
+train=sample(nrow(df),nrow(df)/2,replace = FALSE)
+glm.fit1=glm(y~x,data=df)
+glm.fit2=glm(y~poly(x,2),data=df)
+glm.fit3=glm(y~poly(x,3),data=df)
+glm.fit4=glm(y~poly(x,4),data=df)
+summary(glm.fit1)
+summary(glm.fit2)
+summary(glm.fit3)
+summary(glm.fit4)
+```
+
+```{r}
+# These results agree with the conclusions drawn based on the cross-validation results
+```
+

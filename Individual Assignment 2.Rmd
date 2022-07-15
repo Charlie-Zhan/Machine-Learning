@@ -1,0 +1,80 @@
+---
+title: "Individual Assignment 2"
+author: "Charlie Ling"
+date: "9/11/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+10. This question should be answered using the Carseats data set.
+```{r}
+library(ISLR)
+attach(Carseats)
+View(Carseats)
+```
+(a) Fit a multiple regression model to predict Sales using Price, Urban, and US.
+```{r}
+lm.fit=lm(Sales~Price+Urban+US)
+summary(lm.fit)
+```
+
+
+(b) Provide an interpretation of each coefficient in the model. Be careful—some of the variables in the model are qualitative!
+```{r}
+# Sales is negetively related to price.
+# Us stores have higher sales
+```
+
+(c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+```{r}
+# Sales=a+b1*Price+b2*Urban+b3*US
+```
+
+
+(d) For which of the predictors can you reject the null hypothesis H0:Bj=0?
+```{r}
+# For Price and US I can reject the null hypothesis H0:Bj=0
+```
+
+
+(e) On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
+```{r}
+lm.fit1=lm(Sales~Price+US)
+summary(lm.fit1)
+```
+
+
+
+(f) How well do the models in (a) and (e) fit the data?
+```{r}
+# The models in (a) and (e) have similar Adjusted R-squared: about 23%, which 
+# means these two model fit the data not well.
+```
+
+(g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
+```{r}
+confint(lm.fit1)
+```
+
+
+(h) Is there evidence of outliers or high leverage observations in the model from (e)?
+```{r}
+par(mfrow=c(2,2)) ##divide plotting region into 2*2
+
+plot(lm.fit1)
+
+par(mfrow=c(1,1)) ##reset plotting region
+plot(predict(lm.fit1),rstudent(lm.fit1))
+
+plot(hatvalues(lm.fit1)) ##Leverage
+```
+```{r}
+# There are dots are on the far right side of the Residuals vs Leverage
+# plot, which means potential high-leverage points
+```
+

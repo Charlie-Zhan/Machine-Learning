@@ -1,0 +1,127 @@
+---
+title: "Individual Assignment 3"
+author: "Charlie Ling"
+date: "9/15/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+4.7 Exercises Problem 10
+
+This is an individual assignment. You are allowed to collaborate with other students. However, you are not allowed to copy others code and/or report. You are expected to write your own code and produce your own report as a pdf file. Use R Markdown to produce this report. If you encounter trouble with R Markdown, transfer your code, output, and comments to a Word document and convert that document to a PDF file.
+
+10. This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter’s lab, except that it contains 1, 089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+```{r}
+rm(list=ls())#release memory
+library(ISLR)
+Weekly=na.omit(Weekly)
+View(Weekly)
+```
+
+(a) Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns?
+```{r}
+pairs(Weekly)
+lm.fit=lm(Volume~Year,data = Weekly)
+summary(lm.fit)
+# Volumn increses as year goes by
+```
+
+(b) Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do
+any of the predictors appear to be statistically significant? If so, which ones?
+```{r}
+glm.fit=glm(Direction~.-(Today+Year),data=Weekly,family = binomial)
+summary(glm.fit)
+# Lag2 appears to be statistically significant
+```
+
+
+
+
+(c) Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+```{r}
+glm.probs = predict(glm.fit, type = "response")
+glm.pred = rep("Down",length(glm.probs))
+glm.pred[glm.probs>0.5]="Up"
+table(glm.pred,Weekly$Direction)
+mean(glm.pred==Weekly$Direction)
+# There are 430 actual "Down" is mistakenly classified as "UP", 
+# while 48 actual "UP" is is mistakenly classified as "Down"
+```
+
+(d) Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+```{r}
+train=(Weekly$Year>=1990)&(Weekly$Year<=2008)
+glm.fit=glm(Direction~Lag2,data=Weekly[train,],family = binomial)
+glm.probs = predict(glm.fit,Weekly[!train,], type = "response")
+glm.pred = rep("Down",length(glm.probs))
+glm.pred[glm.probs>0.5]="Up"
+table(glm.pred,Weekly[!train,]$Direction)
+mean(glm.pred==Weekly[!train,]$Direction)
+```
+
+(e) Repeat (d) using LDA.
+```{r}
+library(MASS)
+lda.fit = lda(Direction~Lag2,data=Weekly,subset = train)
+lda.pred = predict(lda.fit,Weekly[!train,])
+lda.class = lda.pred$class
+table(lda.class,Weekly[!train,]$Direction)
+mean(lda.class==Weekly[!train,]$Direction)
+```
+
+
+(g) Repeat (d) using KNN with K = 1.
+```{r}
+train.X = cbind(Weekly[train,]$Lag2)
+test.X = cbind(Weekly[!train,]$Lag2)
+train.Direction = Weekly[train,]$Direction
+test.Direction = Weekly[!train,]$Direction
+library(class)
+set.seed(1)
+knn.pred = knn(train.X,test.X,train.Direction,k=1)
+table(knn.pred,test.Direction)
+mean(knn.pred == test.Direction)
+```
+
+(h) Which of these methods appears to provide the best results on this data?
+```{r}
+# logistic regression and LDA both provide the best results on this data
+```
+
+(i) Experiment with different combinations of predictors, including possible transformations and interactions, for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classifier.
+```{r}
+glm.fit=glm(Direction~Lag2:Volume,data=Weekly[train,],family = binomial)
+glm.probs = predict(glm.fit,Weekly[!train,], type = "response")
+glm.pred = rep("Down",length(glm.probs))
+glm.pred[glm.probs>0.5]="Up"
+table(glm.pred,Weekly[!train,]$Direction)
+mean(glm.pred==Weekly[!train,]$Direction)
+
+lda.fit = lda(Direction~Lag2:Volume,data=Weekly,subset = train)
+lda.pred = predict(lda.fit,Weekly[!train,])
+lda.class = lda.pred$class
+table(lda.class,Weekly[!train,]$Direction)
+mean(lda.class==Weekly[!train,]$Direction)
+
+train.X = cbind(Weekly[train,]$Lag2*Weekly[train,]$Volume)
+test.X = cbind(Weekly[!train,]$Lag2*Weekly[!train,]$Volume)
+train.Direction = Weekly[train,]$Direction
+test.Direction = Weekly[!train,]$Direction
+
+
+k=rep(0,10)
+test_accuracy=rep(0,10)
+for(i in 1:10){
+    knn.pred=knn(train.X,test.X,train.Direction,k=i)
+    accuracy=mean(knn.pred == test.Direction)
+    test_accuracy[i]=accuracy
+    k[i]=i
+}
+cbind(k,test_accuracy)
+# logistic regression provides the best results on this data,
+# with the predictor of Lag2:Volume
+```
+

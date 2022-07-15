@@ -1,0 +1,119 @@
+---
+title: "Individual Assignment 1"
+author: "Charlie Ling"
+date: "9/1/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(MASS)
+View(Boston)
+?Boston
+```
+
+
+(a) How many rows are in this data set? How many columns? What
+do the rows and columns represent?
+```{r}
+dim(Boston)
+#506 rows and 14 columns, rows represent observations, columns present features
+```
+
+
+(b) Make some pairwise scatterplots of the predictors (columns) in
+this data set. Describe your findings.
+```{r}
+pairs(Boston)
+```
+```{r}
+m1=lm(nox~dis,data=Boston)
+summary(m1)
+#Buildings closer to  Boston employment centres have higher nitrogen oxides concentration.
+```
+
+
+```{r}
+m2=lm(nox~age,data=Boston)
+summary(m2)
+#Older buildings have higher nitrogen oxides concentration.
+```
+
+
+(c) Are any of the predictors associated with per capita crime rate?
+If so, explain the relationship.
+```{r}
+summary(lm(crim~tax,data=Boston))
+#Tax. High tax makes people's life harder, maybe pushes them commit crimes.
+```
+
+
+
+(d) Do any of the suburbs of Boston appear to have particularly
+high crime rates? Tax rates? Pupil-teacher ratios? Comment on
+the range of each predictor.
+```{r}
+sapply(Boston,range)
+```
+
+```{r}
+boxplot(Boston$crim)
+#Some suburbs have particularly high crime rates because there are outliers in the crime boxplot.
+```
+
+```{r}
+boxplot(Boston$tax)
+```
+
+```{r}
+boxplot(Boston$ptratio)
+```
+
+
+
+(e) How many of the suburbs in this data set bound the Charles
+river?
+```{r}
+sum(Boston$chas==1)
+```
+
+(f) What is the median pupil-teacher ratio among the towns in this
+data set?
+```{r}
+median(Boston$ptratio)
+```
+
+(g) Which suburb of Boston has the lowest median value of owner-occupied
+homes? What are the values of the other predictors
+for that suburb, and how do those values compare to the overall
+ranges for those predictors? Comment on your findings.
+```{r}
+n=which.min(Boston$medv)
+n
+Boston[n,1:13]
+summary(Boston)
+# Most of those values(such as crim, indus, nox, age, rad, tax, ptratio, black, 
+# lstat)are above the 3rd quantile of overall ranges for those predictors, while rm,
+# dis are reletively lower.
+```
+
+
+(h) In this data set, how many of the suburbs average more than
+seven rooms per dwelling? More than eight rooms per dwelling?
+Comment on the suburbs that average more than eight rooms
+per dwelling.
+```{r}
+sum(Boston$rm>7)
+sum(Boston$rm>8)
+nums=which(Boston$rm>8)
+Boston[nums,1:14]
+# Those suburbs that average more than eight rooms per dwelling have low crime 
+# rate, low lstat and high median value of owner-occupied homes.
+```
+
+

@@ -1,0 +1,106 @@
+---
+title: "Individual Assignment 5"
+author: "Charlie Ling"
+date: "9/29/2021"
+output: pdf_document
+---
+
+Problem 8: In this exercise, we will generate simulated data, and will then use this data to perform best subset selection.
+
+(a) Use the rnorm() function to generate a predictor X of length n=100, as well as a noise vector of length n=100.
+```{r}
+set.seed(2)
+X=rnorm(100)
+e=rnorm(100)
+```
+
+(b) Generate a response vector Y of length n=100 according to the model
+
+Y=B0+B1X+B2X2+B3X3+e
+
+Where B0, B1, B2, and B3 are constants of your choice.
+```{r}
+Y=0.3+0.5*X+0.2*X^2+0.1*X^3+e
+```
+
+(c) Use the regsubsets() function to perform best subset selection in order to choose the best model containing the predictors X,X2,...,X10. What is the best model obtained according to Cp, BIC, and adjusted R2? Show some plots to provide evidence for your answer, and report the coefficients of the best model obtained. Note you will need to use the data.frame() function to create a single data set containing both X and Y.
+```{r}
+df=data.frame(Y,X)
+library(leaps)
+regfit.full = regsubsets(Y~poly(X,10),data=df)
+reg.summary = summary(regfit.full)
+```
+```{r}
+plot(reg.summary$cp,xlab="Number of Predictors", ylab = "Cp", type = "l")
+
+which.min(reg.summary$cp)
+
+points(4,reg.summary$cp[4],col="red",cex=2,pch=20)
+
+#Model 4 is the best model obtained according to Cp
+coef(regfit.full,4)
+```
+```{r}
+plot(reg.summary$bic,xlab="Number of Predictors", ylab = "BIC", type = "l")
+
+which.min(reg.summary$bic)
+
+points(2,reg.summary$bic[2],col="red",cex=2,pch=20)
+
+#Model 2 is the best model obtained according to bic
+coef(regfit.full,2)
+```
+
+```{r}
+plot(reg.summary$adjr2,xlab="Number of Predictors", ylab = "Adjusted RSq", type = "l")
+
+which.max(reg.summary$adjr2)
+
+points(5,reg.summary$adjr2[5],col="red",cex=2,pch=20)
+
+#Model 5 is the best model obtained according to adjr2
+coef(regfit.full,5)
+```
+
+
+(d) Repeat (c), using forward stepwise selection and also using backwards stepwise selection. How does your answer compare to the results in (c)?
+```{r}
+regfit.bwd = regsubsets(Y~poly(X,10),data=df, nvmax = 10, method = "backward")
+reg.summary = summary(regfit.bwd)
+```
+```{r}
+plot(reg.summary$cp,xlab="Number of Predictors", ylab = "Cp", type = "l")
+
+which.min(reg.summary$cp)
+
+points(4,reg.summary$cp[4],col="red",cex=2,pch=20)
+
+#Model 4 is the best model obtained according to Cp
+coef(regfit.full,4)
+```
+```{r}
+plot(reg.summary$bic,xlab="Number of Predictors", ylab = "BIC", type = "l")
+
+which.min(reg.summary$bic)
+
+points(2,reg.summary$bic[2],col="red",cex=2,pch=20)
+
+#Model 2 is the best model obtained according to bic
+coef(regfit.full,2)
+```
+
+```{r}
+plot(reg.summary$adjr2,xlab="Number of Predictors", ylab = "Adjusted RSq", type = "l")
+
+which.max(reg.summary$adjr2)
+
+points(5,reg.summary$adjr2[5],col="red",cex=2,pch=20)
+
+#Model 5 is the best model obtained according to adjr2
+coef(regfit.full,5)
+```
+
+```{r}
+# The results are the same to the results in (c)
+```
+
